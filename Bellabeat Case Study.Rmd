@@ -1,0 +1,402 @@
+---
+title: "Case Stduy Bellabeat_Report"
+author: "Aseem Mehrotra"
+date: "03/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## **Google Data Analytics Capstone Project**
+## **Bellabeat Case Study: How Can a Wellness Technology Company Play it Smart**
+<p></p>
+<center> **Bellabeat is a high-tech manufacturer of health-focused products for women. As per the co-founder & CCO of Bellabeat (Urska Srsen), analyzing device fitness data could help unlock new growth opportunities for the company. Contributing to the vision of CCO, this report focuses on the data collected for FitBit Fitness Tracker data to gain insight into how customers are using there smart devices.** </center>
+<p></p>
+<p></p>
+In this document following steps of Data Analysis Process are followed:
+
+* Ask
+* Prepare
+* Process
+* Analyze
+* Share
+* Act
+
+### Phase 1: Ask
+
+#### Key Objectives:
+
+##### 1. The Business Task:
+
+*  a. **Analyse the Fitbit usage data** in order to gain insight into how consumers use non-Bellabeat smart devices
+*  b. Use these insights to **inform Bellabeat Marketing Strategy** for the product **"Time"** by Bellabeat.
+
+
+#### 2. Elaborate Business Task:
+
+Given the dataset, the business task is to search for user patterns of usage of their smart devices in order to gain insights that would better orientate marketing decisions. In short, in this report I will try to answer the question **"How do people use the smart devices?**
+
+
+#### 3. Key Stake Holders:
+
+The main stakeholders are:
+
+* Co-founder & Chief Creative Officer: Bellabeat
+* Co-founder & Mathematician: Bellabeat
+* Marketing Analytics Team: Bellabeat
+<p></p>
+
+
+### Phase 2: Prepare
+
+#### 1. Data Source:
+
+* The data used in this case study is from the **Kaggle Notebook by the user Mobius**
+* According to metadata, the original data comes from **Zenodo**
+
+#### 2. Shortcomings of the Given Data
+
+* Data is old: Data was collected 5 years ago (in 2016)
+* Data is small: The sample size of data is 33 FitBit users
+* Data may be non-inclusive: The identities of the FitBit users are anonymous, so the data may not be inclusive of all ages, genders, economic backgrounds, geography and ethnicities.
+
+#### 3. Data Cleaning
+
+* The data cleaned using R through RStudio
+* Data cleaning code with outcome is as follows
+<p></p>
+
+### Loading Packages
+
+
+```{r Load Packages}
+library(tidyverse)
+library(readxl)
+library(reshape2)
+library(scales)
+library(sqldf)
+library(janitor)
+library(lubridate)
+```
+<p></p>
+<p></p>
+
+### Reading Unique Data from the Dataset
+
+```{r Read}
+# The code will read unique observations in each dataset. Thus removing the duplicates (if any)
+dailyAct <- unique(read.csv("dailyActivity_merged.csv"))
+dailyCal <- unique(read.csv("dailyCalories_merged.csv"))
+dailyInt <- unique(read.csv("dailyIntensities_merged.csv"))
+dailyStep <- unique(read.csv("dailySteps_merged.csv"))
+heartRate <- unique(read.csv("heartrate_seconds_merged.csv"))
+slpDay <- unique(read.csv("sleepDay_merged.csv"))
+wtInfo <- unique(read.csv("weightLogInfo_merged.csv"))
+```
+<p></p>
+
+### Identifying NULL Values
+
+```{r NULL Values}
+# Null Values in each Column of Data Frame
+lapply(dailyAct, function(x) { length(which(is.na(x)))})
+lapply(dailyCal, function(x) { length(which(is.na(x)))})
+lapply(dailyInt, function(x) { length(which(is.na(x)))})
+lapply(dailyStep, function(x) { length(which(is.na(x)))})
+lapply(heartRate, function(x) { length(which(is.na(x)))})
+lapply(slpDay, function(x) { length(which(is.na(x)))})
+lapply(wtInfo, function(x) { length(which(is.na(x)))})
+# Weight Log Info database wtInfo has 65 missing or NULL values in "Fat" column.
+```
+
+<center> **The above code ensures that no duplicates exist in the imported data-sets and null values are also identified in individual data-sets.** </center>
+<p></p>
+
+### Summary of Daily Data-sets
+
+```{r Daily Summary}
+colnames(dailyAct)
+head(dailyAct)
+colnames(dailyCal)
+head(dailyCal)
+colnames(dailyInt)
+head(dailyInt)
+colnames(dailyStep)
+head(dailyStep)
+```
+<center> **Column names of Daily Calories and Daily Intensities data-sets already exist in Daily Activity Data-set** </center>
+
+<p></p>
+### Summary of other Data-sets (used in this study)
+
+```{r Other Summary}
+colnames(heartRate)
+head(heartRate)
+colnames(wtInfo)
+head(wtInfo)
+```
+
+<p></p>
+<p></p>
+
+### Phase 3: Process
+
+#### 1. Compare different data-sets
+
+* Different data-sets are compared using sqldf() & nrow() functions to identify the number of rows in different data sets
+
+```{r Compare Data Sets 1}
+# Compare Daily Activity and Daily Calories data-sets for number of rows
+dailyActCal <- dailyAct %>% 
+  select(Id, ActivityDate, Calories)
+check1a <- nrow(sqldf("SELECT * FROM dailyActCal INTERSECT SELECT * FROM dailyCal"))
+check1b <- nrow(dailyAct)
+check1c <- nrow(dailyCal)
+check1a
+check1b
+check1c
+```
+
+<center> **Daily Activity, Daily Calorie & new data-set of INTERSECTION of these 2 contain the similar number of rows: 940. ** </center>
+<p></p>
+```{r Compare Data Sets 2}
+dailyActInt <- dailyAct %>% 
+  select(Id, ActivityDate, SedentaryMinutes, LightlyActiveMinutes, FairlyActiveMinutes, VeryActiveMinutes, SedentaryActiveDistance, LightActiveDistance, ModeratelyActiveDistance, VeryActiveDistance)
+check2a <- nrow(sqldf("SELECT * FROM dailyActInt INTERSECT SELECT * FROM dailyInt"))
+check2b <- nrow(dailyAct)
+check2c <- nrow(dailyInt)
+check2a
+check2b
+check2c
+```
+<center> **Daily Activity, Daily Intensities & new data-set of INTERSECTION of these 2 contain the similar number of rows: 940. ** </center>
+<p></p>
+<center> **Daily Activity data-set can be used out of these 3 data-sets for analysis as Daily Activity data-set already has the observations which are present in Daily Calories & Daily Intensities Data-sets** </center>
+<p></p>
+<p></p>
+
+#### 2. Join Data-Sets
+
+**Left Join Daily Activity Data-Set with Heart Rate, Sleep & weight Data-Sets**
+
+```{r Merge}
+dailyHR <- sqldf("SELECT Id, Value AS HeartRate, TRIM(SUBSTR(Time,1,9)) AS Date FROM heartRate")
+dailyActHR <- sqldf("SELECT A.*, B.HeartRate FROM dailyAct AS A LEFT JOIN dailyHR AS B ON A.Id = B.Id AND A.ActivityDate = B.Date")
+
+dailySlp <- sqldf("SELECT Id, TRIM(SUBSTR(SleepDay,1,9)) AS Date, TotalSleepRecords, TotalMinutesAsleep, TotalTimeInBed FROM slpDay")
+dailyActHRSlp <- sqldf("SELECT A.*, B.TotalSleepRecords, B.TotalMinutesAsleep, B.TotalTimeInBed FROM dailyActHR AS A LEFT JOIN dailySlp AS B ON A.Id = B.Id AND A.ActivityDate = B.Date")
+
+wtLog <- sqldf("SELECT Id, TRIM(SUBSTR(Date,1,9)) AS Date, WeightKg, BMI FROM wtInfo")
+dailyActHRSlpWt <- sqldf("SELECT A.*, B.WeightKg, B.BMI FROM dailyActHRSlp AS A LEFT JOIN wtLog AS B ON A.Id = B.Id AND A.ActivityDate = B.date")
+```
+
+**The data-set named "dailyActHRSlpWt" will be used for further analysis in this report.**
+<p></p>
+<p></p>
+#### 3. Clean Data Names in the Data-set
+
+```{r Clean Names}
+dailyActHRSlpWt <- dailyActHRSlpWt %>% 
+  clean_names()
+```
+<p></p>
+<p></p>
+#### 4. Data Types Change
+
+```{r Change Data Types}
+# Change Activity Date Column to Date Data Type
+dailyActHRSlpWt <- dailyActHRSlpWt %>% 
+  mutate(activity_date = mdy(activity_date))
+
+# Change ID column from Numeric to Character for ease in the analysis
+dailyActHRSlpWt <- dailyActHRSlpWt %>% 
+  mutate(id = as.character(id))
+```
+<p></p>
+<p></p>
+#### 5. Summary of the Data
+
+```{r Summary of Master}
+names(dailyActHRSlpWt)
+head(dailyActHRSlpWt)
+summarise(dailyActHRSlpWt)
+glimpse(dailyActHRSlpWt)
+summary(dailyActHRSlpWt)
+```
+<p></p>
+<p></p>
+<p></p>
+### Phase 4: Analysis
+
+#### 1. Calories Burned vs Total Steps Grouped by User Id
+
+```{r Plots Cal vs Steps}
+# Calories Burned vs Total Steps by ID: Scatter Plot
+dailyActHRSlpWt %>% 
+  ggplot(mapping = aes(x=total_steps, y=calories))+
+  geom_point(mapping = aes(color = id))+
+  labs(x="Total Steps", y= "Calories Burned", title = "Calories vs Steps", subtitle = "By User ID", caption = "Data Source: Kaggle Notebook by Mobius", color = "ID")+
+  annotate("rect", xmin = 20000, xmax = 40000, ymin = 0, ymax = 1000, alpha = 0.2, fill = "blue")+
+  annotate("text", x= 21000, y= 800, label = "Higher the Steps Count,  ", color = "blue", hjust = "left")+
+  annotate("text", x= 21000, y= 600, label = "more the ", color = "blue", hjust = "left")+
+  annotate("text", x= 21000, y= 400, label = "Calories burned", color = "blue", hjust = "left")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 2), legend.text = element_text(face = "bold"))
+
+# Calories vs Steps by User ID: Box Plot
+dailyActHRSlpWt %>% 
+  select(id, total_steps, calories) %>%
+  group_by(id) %>% 
+  ggplot(mapping = aes(x = total_steps, y= calories))+
+  geom_boxplot(aes(fill=id))+
+  labs(x= "Steps", y= "Calories Burned",title = "Calories vs Steps", subtitle = "By User ID", caption = "Data Source: Kaggle Notebook by Mobius", fill = "ID")
+
+```
+
+Analyzing the above plot it is evident that **"Higher the Steps count, more the Calories Burned**
+<p></p>
+<p></p>
+
+#### 2. Calories Burned by Users
+
+```{r Plots Calories Burned}
+# Calories Burned by User ID: Density Plot
+dailyActHRSlpWt %>%
+  select(id, total_steps, calories) %>% 
+  group_by(id) %>% 
+  ggplot(aes(x= calories))+
+  geom_density(aes(fill=factor(id), alpha = 0.95))+
+  labs(x="CALORIES", y= "DENSITY", title = "Calories Burned Density", subtitle = "By User ID: 95% Confidence", caption = "Data Source: Kaggle Notebook by Mobius", scientific = FALSE, fill = "ID")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 0), legend.text = element_text(face = "bold"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1))+
+  facet_wrap(~id)
+
+# Calories Burned by User ID: Bar Graph
+dailyActHRSlpWt %>% 
+  group_by(id) %>% 
+  select(id, calories) %>% 
+  ggplot(mapping = aes(id))+
+  geom_bar(mapping = aes(fill = id))+
+  labs(x="ID", y= "Calories Burned", title = "Calories vs Steps", subtitle = "By User ID", caption = "Data Source: Kaggle Notebook by Mobius", scientific = FALSE, fill = "ID")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 2), legend.text = element_text(face = "bold"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1))
+```
+
+**Almost all users use the FitBit device for Calories Burned tracking**
+<p></p>
+<p></p>
+
+#### 3. Steps Taken by Users
+
+```{r Plots Steps Taken}
+# Total Steps by User ID: Density Plot
+dailyActHRSlpWt %>%
+  select(id, total_steps, calories) %>% 
+  ggplot(aes(x= total_steps))+
+   scale_y_continuous(labels= scales::comma)+
+  geom_density(aes(fill=factor(id), alpha = 0.95))+
+  labs(x="STEPS", y= "DENSITY", title = "Total Steps Density", subtitle = "By User ID: 95% Confidence", caption = "Data Source: Kaggle Notebook by Mobius", scientific = FALSE, fill = "ID")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 0), legend.text = element_text(face = "bold"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1))+
+  facet_wrap(~id)
+
+# Total Steps by User ID: Bar Graph
+# Total Steps by User ID: Bar Graph
+dailyActHRSlpWt %>%
+  select(id, total_steps) %>% 
+  ggplot(aes(x= id))+
+  scale_y_continuous(labels= scales::comma)+
+  geom_bar(aes(fill=factor(id)))+
+  labs(x="STEPS", y= "ID", title = "Total Steps", subtitle = "By User ID", caption = "Data Source: Kaggle Notebook by Mobius", scientific = FALSE, fill = "ID")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 0), legend.text = element_text(face = "bold"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1))
+```
+
+
+**Steps tracking is utilized by all the users, although, some users are very active & some are sedentary.**
+<p></p>
+<p></p>
+
+#### 4. Weight Logs
+
+```{r Plots Weights}
+# Weight Trend By User ID
+dailyActHRSlpWt %>% 
+  select(id, activity_date, weight_kg) %>% 
+  drop_na() %>% 
+  ggplot(mapping = aes(activity_date, weight_kg))+
+  geom_line(aes(color = id))+
+  labs(x="Date", y= "Weight", title = "Weight Trend", subtitle = "By User ID", caption = "Data Source: Kaggle Notebook by Mobius", color = "ID")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 0), legend.text = element_text(face = "bold"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1))
+```
+
+**Weight Log** is not famous among the users and only 8 out of 33 users logged the weight info in the samrt device.
+<p></p>
+<p></p>
+
+#### 5. Sleep Trends
+
+```{r Sleep}
+dailyActHRSlpWt %>% 
+  select(id, activity_date, total_minutes_asleep) %>% 
+  drop_na() %>% 
+  ggplot(mapping = aes(activity_date, total_minutes_asleep))+
+  geom_point(aes(color = id))+
+  labs(x="Date", y= "Sleep", title = "Sleep Trend", subtitle = "By User ID", caption = "Data Source: Kaggle Notebook by Mobius", color = "ID")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 0), legend.text = element_text(face = "bold"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1))+
+  facet_wrap(~id)
+```
+**Sleep Tracking is famous feature of smart device among the users. 24 users out of 33 used Fitbit smart device for Sleep tracking.**
+<p></p>
+<p></p>
+
+#### 6. Heart Rate Trends
+
+```{r Heart Rate}
+# Heart Rate Trend By User ID
+dailyActHRSlpWt %>% 
+  select(id, activity_date, heart_rate) %>% 
+  drop_na() %>% 
+  ggplot(mapping = aes(activity_date, heart_rate))+
+  geom_point(aes(color = id))+
+  labs(x="Date", y= "Heart Rate", title = "Heart Rate Trend", subtitle = "By User ID", caption = "Data Source: Kaggle Notebook by Mobius", color = "ID")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 0), legend.text = element_text(face = "bold"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1))+
+  facet_wrap(~id)
+```
+
+**Almost 42% FitBit users are utilizing the Heart Rate track feature as per the data available.**
+<p></p>
+<p></p>
+
+#### 7. Time to Fall Asleep
+
+```{r Time in Bed Awake}
+# Time to get sleep
+dailyActHRSlpWt %>% 
+  select(id, activity_date, total_minutes_asleep, total_time_in_bed) %>% 
+  drop_na() %>% 
+  ggplot(mapping = aes(activity_date, total_time_in_bed-total_minutes_asleep))+
+  geom_point(aes(color = id))+
+  labs(x="Time in Bed", y= "Minutes taken to Sleep", title = "Sleep Analysis", subtitle = "By User ID", caption = "Data Source: Kaggle Notebook by Mobius", color = "ID")+
+  theme(legend.box.background = element_rect(color = "Blue", size = 0), legend.text = element_text(face = "bold"), axis.text.x = element_text(angle = 90, vjust = 0.5, hjust =1))+
+  facet_wrap(~id)
+```
+
+**Time taken to get asleep is higher (nearly 45 minutes). This might be due to stress.**
+
+<p></p>
+
+### **Use of Fitbit for Calories Burned, Steps Taken, Sleep & Heart Rate tracking is Fairly high as compared to Weight Tracking**
+
+### Phase 5: Share
+
+**This report is available in HTML format on GitHub.**
+
+<p></p>
+<p></p>
+<p></p>
+
+### Phase 6: Act
+<p></p>
+## Recommendations based on analysis:
+
+##### 1. Marketing can use the connection between **Steps Taken** & **Calorie Burned** to advertise **Steps Taken** as key for being fit by burning **More Calories**.
+##### 2. **Mindfulness Tracking** can be advertised to reduce the stress and can be linked to better sleep.
+##### 3. Features like **"Menstrual Tracking"** will enable women to have value addition by using the product from **Bellabeat**
